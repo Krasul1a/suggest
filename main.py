@@ -4,8 +4,9 @@ import json
 import requests
 import time
 from urllib.parse import quote
-
-
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36'
+}
 searchDict = {'google': 'http://google.com/complete/search?output=firefox&q=',
               'yandex': 'http://suggest.yandex.ru/suggest-ya.cgi?ct=text/html&v=2&part=',
               'bing': 'https://api.bing.com/osjson.aspx?query=',
@@ -88,3 +89,22 @@ def suggestStartpage(phrase):
         phrases.append(i['text'])
     return phrases
 
+def suggestDogpile(phrase):  # пока не работает просит капчу
+    r = requests.get(f"{searchDict['dogpile']}{quote(phrase)}",headers=headers)
+    return r
+
+def suggestSwisscows(phrase):
+    r = requests.get(f"{searchDict['swisscows']}{quote(phrase)}")
+    r = r.json()
+    return r
+
+
+def suggestAsk(phrase):
+    r = requests.get(f"{searchDict['ask']}{quote(phrase)}")
+    r = r.json()[1]
+    return r
+
+def suggestBrave(phrase): 
+    r = requests.get(f"{searchDict['brave']}{quote(phrase)}&source=web",headers=headers)
+    r = r.json()[1]
+    return r
