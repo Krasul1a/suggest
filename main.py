@@ -1,14 +1,24 @@
 # coding: utf8
+
 import json
 import requests
 import time
 from urllib.parse import quote
 
-google = 'http://google.com/complete/search?output=firefox&q='  # автодополенния на основе гугла
-yandex = 'http://suggest.yandex.ru/suggest-ya.cgi?ct=text/html&v=2&part='  # автодополенния на основе яндекса
+
+searchDict = {'google': 'http://google.com/complete/search?output=firefox&q=',
+              'yandex': 'http://suggest.yandex.ru/suggest-ya.cgi?ct=text/html&v=2&part=',
+              'bing': 'https://api.bing.com/osjson.aspx?query=',
+              'duckduckgo': 'https://duckduckgo.com/ac/?kl=wt-wt&q=',
+              'qwant': 'https://api.qwant.com/api/suggest/?client=opensearch&q=',
+              'yahoo': 'https://api.search.yahoo.com/sugg/gossip/gossip-in-ura?output=sd1&command=',
+              'startpage': 'https://www.startpage.com/suggestions?q=',
+              'dogpile': 'https://www.dogpile.com/suggestions?q=',
+              'swisscows': 'https://swisscows.com/api/suggest?query=',
+              'ask': 'https://amg-ss.ask.com/query?q=',
+              'brave': 'https://search.brave.com/api/suggest?q='}
 
 pharases = []  # пусто список для фраз
-
 
 def fileTolist():
     file1 = open("phrase.txt", "r")
@@ -18,11 +28,10 @@ def fileTolist():
         # прерываем цикл, если строка пустая
         if not line:
             break
-        # добавляем в список фразы которые будем дополнять
-        pharases.append(line.strip())
+        # добавляем в список фразы которые будем дополнять и сразу переводим в URL форму
+        pharases.append(line.strip().replace(' ', '%20'))
     # закрываем файл
     file1.close
-
 
 def listToFile(l):
     # простая функция что построчно допысывает в файл каждый елемент списка.
@@ -32,27 +41,50 @@ def listToFile(l):
     f.close()
 
 
-fileTolist()  # считываем файл
 
-allPharase = []
-for phrase in pharases:
-    print(phrase)
-    r = requests.get(f'{google}+{phrase.replace(" ", "%20")}')  # сами запросы в гугл, + вписываю все в один список
+def suggestGoogle(phrase):
+    r = requests.get(f"{searchDict['google']}{phrase.replace(' ', '%20')}")
     r = r.json()[1]
-    for i in r:
-        allPharase.append(i)
+    return r
 
-    r = requests.get(f'{yandex}+{quote(phrase)}') # сами запросы в яндекс, + вписываю все в один список
-    help(r)
-    r = r.text.replace('suggest.apply', '')[len(phrase)+4:-1]
-    print(r)
+
+def suggestYandex(phrase):
+    r = requests.get(f"{searchDict['yandex']}{quote(phrase)}")
+    r = r.text.replace('suggest.apply', '')[len(phrase) + 4:-1]
     r = json.loads(r)
+    return r
 
-    r = r.text.replace('[', '').replace('"', '').replace(']', '').replace(')', '').split(',')  # исключеения всякой чипухи от яндекса
-    del r[0:2]
+def suggestBing(phrase):
+    r = requests.get(f"{searchDict['bing']}{quote(phrase)}")
+    r = r.json()[1]
+    return r
 
+def suggestDuckduckgo(phrase):
+    r = requests.get(f"{searchDict['duckduckgo']}{quote(phrase)}")
+    r = r.json()
+    phrases = []
     for i in r:
-        allPharase.append(i)
-    time.sleep(2)
+        phrases.append(i['phrase'])
+    return phrases
 
-listToFile(allPharase)  # создаем файл с созданными списками
+def suggestQwant(phrase):
+    r = requests.get(f"{searchDict['qwant']}{quote(phrase)}")
+    r = r.json()[1]
+    return r
+
+def suggestYahoo(phrase):
+    r = requests.get(f"{searchDict['yahoo']}{quote(phrase)}")
+    r = r.json()['r']
+    phrases = []
+    for i in r:
+        phrases.append(i['k'])
+    return phrases
+
+def suggestStartpage(phrase):
+    r = requests.get(f"{searchDict['startpage']}{quote(phrase)}")
+    r = r.json()['suggestions']
+    phrases = []
+    for i in r:
+        phrases.append(i['text'])
+    return phrases
+
